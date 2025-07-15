@@ -1,12 +1,15 @@
-- name: Install Apache2
-  hosts: web
+- name: Install wget, curl, vim, openssl, git
+  hosts: all
   become: yes
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: yes
-
     - name: Install Apache2
       ansible.builtin.apt:
-        name: apache2
-        state: present
+        pkg:
+          - wget
+          - curl
+          - vim
+          - openssl
+          - git

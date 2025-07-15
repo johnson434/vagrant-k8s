@@ -1,0 +1,16 @@
+# Vagrant 관련
+.vagrant/
+*.box
+
+# SSH 키 (공개키/비공개키)
+id_rsa
+id_rsa.pub
+
+# Python 가상환경
+**/venv/
+**/.env/
+
+# Ansible 캐시 및 기타
+*.retry
+__pycache__/
+*.pyc

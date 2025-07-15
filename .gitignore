@@ -1,5 +1,5 @@
 # Vagrant 관련
-.vagrant/
+**/.vagrant/
 *.box
 
 # SSH 키 (공개키/비공개키)

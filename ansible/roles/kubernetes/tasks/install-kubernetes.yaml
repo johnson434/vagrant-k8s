@@ -1,53 +1,48 @@
-- name: Setup Kubernetes apt repository and GPG key
-  hosts: all
-  become: true
+- name: Install required packages for GPG and APT
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gpg
+    state: present
+    update_cache: no
 
-  tasks:
-    - name: Install required packages for GPG and APT
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gpg
-        state: present
-        update_cache: no
+- name: Ensure /etc/apt/keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
 
-    - name: Ensure /etc/apt/keyrings directory exists
-      file:
-        path: /etc/apt/keyrings
-        state: directory
-        mode: "0755"
+- name: Download and dearmor Kubernetes GPG key
+  shell: |
+    rm -f /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    mkdir -p -m 755 /etc/apt/keyrings
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | \
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
-    - name: Download and dearmor Kubernetes GPG key
-      shell: |
-        rm -f /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-        mkdir -p -m 755 /etc/apt/keyrings
-        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | \
-        gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+- name: Add Kubernetes apt repository with signed-by
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /
+    mode: "0644"
 
-    - name: Add Kubernetes apt repository with signed-by
-      copy:
-        dest: /etc/apt/sources.list.d/kubernetes.list
-        content: |
-          deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /
-        mode: "0644"
+- name: Update apt cache
+  apt:
+    update_cache: yes
 
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    - name: Install kubelet, kubeadm, kubectl
-      apt:
-        name:
-          - kubelet
-          - kubeadm
-          - kubectl
-        state: present
-        update_cache: no  # 이미 위에서 했으므로 다시 안 해도 됨
-        
-    - name: Enable and start kubelet service
-      ansible.builtin.systemd:
-        name: kubelet
-        enabled: yes
-        state: started
+- name: Install kubelet, kubeadm, kubectl
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: no
+    
+- name: Enable and start kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: yes
+    state: started

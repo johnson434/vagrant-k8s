@@ -1,0 +1,3 @@
+- name: Install containerd
+  include_tasks: install-containerd.yaml
+

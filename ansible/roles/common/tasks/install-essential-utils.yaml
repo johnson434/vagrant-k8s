@@ -1,0 +1,13 @@
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    
+- name: Install wget, curl, vim, openssl, git, net-tools
+  ansible.builtin.apt:
+    pkg:
+      - wget
+      - curl
+      - vim
+      - openssl
+      - git
+      - net-tools

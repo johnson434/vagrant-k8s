@@ -1,12 +1,10 @@
-- name: Initialize Kubernetes Control Plane
-  hosts: control_planes
-  become: true
-  tasks:
+- name: Initialize Kubernetes Control Plane (control_planes only)
+  block:
     - name: Run kubeadm init
       command: >
         kubeadm init
         --apiserver-advertise-address=192.168.56.10
-        --control-plane-endpoint=cp1.cluster.local
+        --control-plane-endpoint=cp.cluster.local
         --pod-network-cidr=10.244.0.0/16
         --upload-certs
       args:
@@ -34,20 +32,7 @@
     - name: Save join command
       set_fact:
         kubeadm_join_command: "{{ join_cmd.stdout }}"
-
-- name: Join worker nodes to cluster
-  hosts: worker_nodes
-  become: true
-  tasks:
-    - name: Run kubeadm join
-      command: "{{ hostvars['cp']['kubeadm_join_command'] }}"
-      args:
-        creates: /etc/kubernetes/kubelet.conf
-
-- name: Install CNI Calico
-  hosts: control_planes
-  become: true
-  tasks:
+        
     - name: Download Calico manifest
       get_url:
         url: https://raw.githubusercontent.com/projectcalico/calico/v3.30.2/manifests/calico.yaml
@@ -58,3 +43,12 @@
       command: kubectl apply -f /tmp/calico.yaml
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+  when: inventory_hostname in groups['control_planes']
+
+- name: Join worker nodes to cluster (worker_nodes only)
+  block:
+    - name: Run kubeadm join
+      command: "{{ hostvars['cp']['kubeadm_join_command'] }}"
+      args:
+        creates: /etc/kubernetes/kubelet.conf
+  when: inventory_hostname in groups['worker_nodes']

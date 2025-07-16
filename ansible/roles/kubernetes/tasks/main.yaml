@@ -1,0 +1,2 @@
+- name: Install Kubernetes
+  import_tasks: install-kubernetes.yaml

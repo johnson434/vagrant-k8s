@@ -1,0 +1,70 @@
+- name: Network setting for cluster
+  hosts: all
+  become: true
+  vars:
+    sysctl_settings:
+      - { name: net.bridge.bridge-nf-call-iptables, value: 1 }
+      - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }
+      - { name: net.ipv4.ip_forward, value: 1 }
+
+  tasks:
+    - name: Ensure br_netfilter module is loaded
+      ansible.builtin.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Persist br_netfilter module loading
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: "br_netfilter\n"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Set sysctl parameters for Kubernetes networking
+      ansible.builtin.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_set: yes
+        state: present
+        reload: yes
+      loop: "{{ sysctl_settings }}"
+
+    - name: Disable swap for current session
+      ansible.builtin.command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Disable swap permanently in /etc/fstab
+      ansible.builtin.replace:
+        path: /etc/fstab
+        regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+        replace: '#\1\2\3swap\4'
+        backup: yes
+      when: ansible_swaptotal_mb > 0
+    - block:
+        - name: Disable swap for current session
+          command: swapoff -a
+
+        - name: Disable swap permanently, persist reboots
+          replace:
+            path: /etc/fstab
+            regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+            replace: '#\1\2\3swap\4'
+            backup: yes
+
+        - name: Print only if swap exists
+          debug:
+            msg: "This machine has swap enabled!"
+      when: ansible_swaptotal_mb > 0
+    - name: Add all hosts entries as one managed block
+      blockinfile:
+        path: /etc/hosts
+        block: |
+          192.168.56.10 cp1 cp1.cluster.local
+          192.168.56.11 w1 w1.cluster.local
+          192.168.56.12 w2 w2.cluster.local
+        marker: "# {mark} ANSIBLE MANAGED K8S HOSTS"
+
+
+
+

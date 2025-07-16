@@ -1,0 +1,3 @@
+- name: Create cluster with kubeadm
+  hosts: control_planes
+  

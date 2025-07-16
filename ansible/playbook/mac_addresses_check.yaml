@@ -4,9 +4,9 @@
   become: false
 
   tasks:
-    #    - name: Print ansible_facts
-    #      debug:
-    #        var: ansible_facts
+    - name: Print ansible_facts
+      debug:
+        var: ansible_facts
     - name: Set my_mac from default IPv4
       set_fact:
         mac_address: "{{ my_mac_list | default([]) + [ansible_facts['enp0s8']['macaddress']] }}"
@@ -24,8 +24,3 @@
       fail:
         msg: "❗ Duplicate MAC addresses detected: {{ mac_list }}"
       when: mac_list | length != (mac_list | unique | length)
-
-    #    - name: Check if the mac addresses are duplicated
-    #      ansible.builtin.assert:
-    #        that:
-    #          - ( my_mac_list | length ) == ( my_mac_list | unique | length )

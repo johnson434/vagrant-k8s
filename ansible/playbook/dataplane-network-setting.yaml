@@ -1,0 +1,78 @@
+- name: Configure iptables for Kubernetes Worker Nodes (Data Plane)
+  hosts: worker_nodes
+  become: true
+  vars:
+    allowed_tcp_ports:
+      - 22     # SSH
+      - 10250  # Kubelet API
+      - 10256  # kube-proxy
+    allowed_nodeport_tcp_range: "30000:32767"
+    allowed_nodeport_udp_range: "30000:32767"
+
+  tasks:
+    - name: Accept loopback traffic
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: lo
+        jump: ACCEPT
+        action: append
+
+    - name: Accept established/related connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        ctstate:
+          - ESTABLISHED
+          - RELATED
+        jump: ACCEPT
+        action: append
+    - name: Accept ICMP (ping)
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: icmp
+        jump: ACCEPT
+        action: append
+
+    - name: Accept specific Kubernetes TCP ports
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "{{ item }}"
+        jump: ACCEPT
+        action: append
+      loop: "{{ allowed_tcp_ports }}"
+
+    - name: Accept NodePort TCP range
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: "{{ allowed_nodeport_tcp_range }}"
+        jump: ACCEPT
+        action: append
+
+    - name: Accept NodePort UDP range
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: udp
+        destination_port: "{{ allowed_nodeport_udp_range }}"
+        jump: ACCEPT
+        action: append
+
+    - name: Set default INPUT policy to DROP
+      ansible.builtin.iptables:
+        chain: INPUT
+        policy: DROP
+
+    - name: Set default FORWARD policy to DROP
+      ansible.builtin.iptables:
+        chain: FORWARD
+        policy: DROP
+
+    - name: Install iptables-persistent (Debian/Ubuntu)
+      apt:
+        name: iptables-persistent
+        state: present
+        install_recommends: false
+
+    - name: Save iptables rules permanently
+      ansible.builtin.command:
+        cmd: netfilter-persistent save

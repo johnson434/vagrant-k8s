@@ -1,0 +1,41 @@
+- name: Network setting for cluster
+  block:
+    - name: Ensure br_netfilter module is loaded
+      ansible.builtin.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Persist br_netfilter module loading
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/k8s.conf
+        content: "br_netfilter\n"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Set sysctl parameters for Kubernetes networking
+      ansible.builtin.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_set: yes
+        state: present
+        reload: yes
+      loop:
+        - { name: net.bridge.bridge-nf-call-iptables, value: 1 }
+        - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }
+        - { name: net.ipv4.ip_forward, value: 1 }
+
+- name: Disable swap permanently in /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^(\s*)([^#\n]+\s+)(\w+\s+)swap(\s+.*)$'
+    replace: '#\1\2\3swap\4'
+    backup: yes
+  when: ansible_swaptotal_mb > 0
+
+- name: Add all hosts entries as one managed block
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      192.168.56.10 cp cp.cluster.local
+    marker: "# {mark} ANSIBLE MANAGED K8S HOSTS"

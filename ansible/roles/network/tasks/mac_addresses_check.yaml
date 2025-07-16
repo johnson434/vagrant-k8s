@@ -1,26 +1,17 @@
-- name: Set MAC address facts on each node
-  hosts: all
-  gather_facts: yes
-  become: false
+- name: Print ansible_facts (for debug only)
+  debug:
+    var: ansible_facts
 
-  tasks:
-    - name: Print ansible_facts
-      debug:
-        var: ansible_facts
-    - name: Set my_mac from default IPv4
-      set_fact:
-        mac_address: "{{ my_mac_list | default([]) + [ansible_facts['enp0s8']['macaddress']] }}"
-    - name: Print my_mac_list
-      debug:
-        var: mac_address
-- name: Collect MACs and detect duplicates
-  hosts: all
-  tasks:
-    - name: Collect all Macs from hosts
-      set_fact:
-        mac_list: "{{ groups['all'] | map('extract', hostvars, 'mac_address') | list }}"
-      run_once: true
-    - name: Fail if duplicates exist
-      fail:
-        msg: "❗ Duplicate MAC addresses detected: {{ mac_list }}"
-      when: mac_list | length != (mac_list | unique | length)
+- name: Print mac_address per host
+  debug:
+    var: mac_address
+
+- name: Collect all MAC addresses into mac_list
+  set_fact:
+    mac_list: "{{ groups['all'] | map('extract', hostvars, 'mac_address') | list }}"
+  delegate_to: localhost
+
+- name: Fail if duplicate MAC addresses exist
+  fail:
+    msg: "Duplicate MAC addresses detected: {{ mac_list }}"
+  when: mac_list | length != (mac_list | unique | length)

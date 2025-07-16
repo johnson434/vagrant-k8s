@@ -1,0 +1,6 @@
+    allowed_tcp_ports:
+      - 22     # SSH
+      - 10250  # Kubelet API
+      - 10256  # kube-proxy
+    allowed_nodeport_tcp_range: "30000:32767"
+    allowed_nodeport_udp_range: "30000:32767"

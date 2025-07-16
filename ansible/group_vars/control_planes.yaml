@@ -1,0 +1,13 @@
+advertise_address: "192.168.56.10"
+control_plane_endpoint: "cp.cluster.local"
+pod_network_cidr: "10.244.0.0/16"
+
+# 클러스터 운영을 위한 필수 ingress 포트
+allowed_ports:
+  - 22 # SSH
+  - 6443 # kube-apiserver
+  - 2379 # etcd
+  - 2380 # etcd
+  - 10250 # kubelet API
+  - 10257 # controller-manager
+  - 10259 # scheduler

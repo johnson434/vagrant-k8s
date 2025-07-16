@@ -1,2 +1,7 @@
-- name: Init cluster with kubeadm
-  import_tasks: init-cluster-with-kubeadm.yaml
+- name: Run kubeadm init
+  import_tasks: init/main.yaml
+  when: do_kubeadm_init | default(true)
+
+- name: Run kubeadm reset
+  import_tasks: reset/main.yaml
+  when: do_kubeadm_reset | default(false)

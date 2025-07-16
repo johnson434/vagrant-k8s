@@ -1,2 +1,5 @@
 - name: Install essential utilities
   include_tasks: install-essential-utils.yaml
+
+- name: Turn off the swapoff
+  include_tasks: swap-off.yaml

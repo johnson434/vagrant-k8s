@@ -21,6 +21,7 @@ Vagrant.configure("2") do |config|
   }
 
   config.vm.box = "ubuntu/jammy64"
+  config.ssh.insert_key = true
 
   nodes.each do |name, opts|
     config.vm.define name do |node|

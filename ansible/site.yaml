@@ -2,9 +2,15 @@
   become: yes
   roles:
     - common
+  gather_facts: true
+  tasks:
+    - name: Set mac_address fact
+      set_fact:
+        mac_address: "{{ ansible_facts['enp0s8']['macaddress'] }}"
 
 - hosts: control_planes
   become: yes
+  gather_facts: true
   roles:
     - network
     - containerd

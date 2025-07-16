@@ -1,0 +1,2 @@
+- name: Init cluster with kubeadm
+  import_tasks: init-cluster-with-kubeadm.yaml

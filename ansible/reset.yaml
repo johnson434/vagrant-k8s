@@ -1,5 +1,26 @@
 - hosts: all
   become: yes
+  roles:
+    - common
+  gather_facts: true
   tasks:
-    - name: Include kubeadm reset tasks
-      include_tasks: roles/kubeadm/tasks/reset/main.yaml
+    - name: Set mac_address fact
+      set_fact:
+        mac_address: "{{ ansible_facts['enp0s8']['macaddress'] }}"
+
+- hosts: control_planes
+  become: yes
+  gather_facts: true
+  roles:
+    - network
+    - containerd
+    - kubernetes
+    - kubeadm
+
+- hosts: worker_nodes
+  become: yes
+  roles:
+    - network
+    - containerd
+    - kubernetes
+    - kubeadm

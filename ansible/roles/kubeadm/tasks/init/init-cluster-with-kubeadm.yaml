@@ -12,18 +12,18 @@
 
     - name: Create .kube directory
       file:
-        path: /root/.kube
+        path: /home/{{ user_name }}/.kube
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Copy admin.conf to kube config
       copy:
         src: /etc/kubernetes/admin.conf
-        dest: /root/.kube/config
+        dest: /home/{{ user_name }}/.kube/config
         remote_src: yes
-        owner: root
-        group: root
-        mode: '0644'
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: "0644"
 
     - name: Extract kubeadm join command with cert key (for other CPs and workers)
       command: kubeadm token create --print-join-command
@@ -32,12 +32,12 @@
     - name: Save join command
       set_fact:
         kubeadm_join_command: "{{ join_cmd.stdout }}"
-        
+
     - name: Download Calico manifest
       get_url:
         url: https://raw.githubusercontent.com/projectcalico/calico/v3.30.2/manifests/calico.yaml
         dest: /tmp/calico.yaml
-        mode: '0644'
+        mode: "0644"
 
     - name: Apply Calico manifest using kubectl
       command: kubectl apply -f /tmp/calico.yaml
